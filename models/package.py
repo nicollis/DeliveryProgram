@@ -1,19 +1,17 @@
-from flag import Flag
+from models.flag import Flag
 
 class Package:
-  def __init__(self, id, address, city, zip, deadline, weight, flags, group_number = None):
+  def __init__(self, id, address, zip, deadline, weight, flag, group_number = None):
     self.id = id
     self.address = address
-    self.city = city
     self.zip = zip
     self.deadline = deadline
     self.weight = weight
-    self.flags = flags
+    self.flag = flag
     self.group_number = group_number
     self.truck = None
 
   def __str__(self):
-    flags = ", ".join([flag.key for flag in self.flags])
-    return f"{self.id} {self.address} {self.city} {self.zip} {self.deadline} {self.weight} flags({flags})"
+    return f"{self.id} {self.address} {self.zip} {self.deadline} {self.weight} {self.flag})"
     
     

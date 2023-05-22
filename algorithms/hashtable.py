@@ -1,4 +1,4 @@
-from linkedlist import LinkedList
+from algorithms.linkedlist import LinkedList
 
 class HashTable:
     _bucket_size = 61 # rule of thumb is to use a prime number between 1.5 and 2 times the number of expected entries
@@ -6,6 +6,9 @@ class HashTable:
     def __init__(self, bucket_size=_bucket_size):
         self._bucket_size = bucket_size
         self._buckets = [ LinkedList() for _ in range(bucket_size)]
+
+    def __str__(self):
+        return "\n".join([str(bucket) for bucket in self._buckets if bucket.head is not None])
 
     # for our hash table we are going to expect the key to be the id of the object
     # however to create a well rounded hash function we will use the key as a string
@@ -36,7 +39,7 @@ class HashTable:
           raise e
     
     # O(1)
-    def insert(self, key, data):
+    def append(self, key, data):
         index = self._hash(key)
         bucket = self._buckets[index]
         bucket.append(key, data)

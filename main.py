@@ -1,16 +1,29 @@
-# This is a sample Python script.
+import csv
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+from algorithms.hashtable import HashTable
+from models.package import Package
+
+# read data from package.csv and load into our hash table
+# O(n) where n is the number of packages
+def loadPageData():
+    packages = HashTable()
+    with open('data/package.csv') as file:
+        reader = csv.reader(file)
+        next(reader) # skip header row
+        for row in reader:
+            try: 
+                package = Package(int(row[0]), row[1], int(row[4]), row[5], int(row[6]), row[7]) # todo: classify flags
+                packages.append(package.id, package)
+            except ValueError as e:
+                print(f"Problem loading the package with id: {row[0]} into the hash table.\n {e}")
+    return packages
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
 
-
-# Press the green button in the gutter to run the script.
+def main():
+    packages = loadPageData()
+    print(packages)
+    
+            
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    main()
