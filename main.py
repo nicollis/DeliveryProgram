@@ -6,27 +6,30 @@ from models.package import Package
 from models.truck import Truck
 from models.dispatch import Dispatch
 
+
 # read data from package.csv and load into our hash table
 # O(n) where n is the number of packages
-def loadPageData():
+def load_page_data():
     packages = HashTable()
     with open('data/packages.csv') as file:
         reader = csv.reader(file)
-        next(reader) # skip header row
+        next(reader)  # skip header row
         for row in reader:
-            try: 
-                package = Package(int(row[0]), row[1], row[2], int(row[4]), row[5], int(row[6]), row[7]) # todo: classify flags
+            try:
+                package = Package(int(row[0]), row[1], row[2], int(row[4]), row[5], int(row[6]),
+                                  row[7])  # todo: classify flags
                 packages.append(package.id, package)
             except ValueError as e:
                 print(f"Problem loading the package with id: {row[0]} into the hash table.\n {e}")
     return packages
 
-def loadDistanceData():
+
+def load_distance_data():
     addresses = []
     distances = []
     with open('data/distances.csv') as file:
         reader = csv.reader(file)
-        next(reader) # skip header row
+        next(reader)  # skip header row
         for row in reader:
             row[0] = row[0].split('\n')[1].strip()
             addresses.append(row[0])
@@ -34,41 +37,52 @@ def loadDistanceData():
 
     return (addresses, distances)
 
+
 def deliver(end_time=None):
     # Load in the packages
-    packages = loadPageData()
+    packages = load_page_data()
     # Load in the distances
-    addresses, distances = loadDistanceData()
+    addresses, distances = load_distance_data()
 
-    HUB = addresses[0] # the hub is the first address in the list
+    HUB = addresses[0]  # the hub is the first address in the list
+
+    truck1_package_logs = [
+        [13, 14, 15, 16, 19, 20, 39, 21, 34, 7, 29, 27, 35, 37, 30, 8],
+        [24, 22, 18, 11, 23, 12]
+    ]
+
+    truck2_package_logs = [
+        [25, 26, 6, 28, 31, 32, 1, 4, 40, 17, 36],
+        [10, 5, 38, 3, 9, 2, 33]
+    ]
 
     load_truck2 = True if end_time == None or datetime.datetime.combine(datetime.date.today(), end_time) >= \
-       datetime.datetime.combine(datetime.date.today(), datetime.datetime.strptime('9:05 am', '%I:%M %p').time()) else False
+                          datetime.datetime.combine(datetime.date.today(),
+                                                    datetime.datetime.strptime('9:05 am', '%I:%M %p').time()) else False
 
     truck1 = Truck(1, current_location=HUB)
     truck2 = Truck(2, current_location=HUB, start_time='9:05')
     dispatch = Dispatch(HUB, packages, addresses, distances)
 
-    # Load with priority first
-    dispatch.loadTruck1WithPriorityPackages(truck1)
+    dispatch.loadTruckWithPackageList(truck1, truck1_package_logs[0])
+    if load_truck2:
+        dispatch.loadTruckWithPackageList(truck2, truck2_package_logs[0])
 
-    if load_truck2: 
-        dispatch.loadTruck2WithPriorityPackages(truck2)
+    success1 = dispatch.truckDeliverPackages(truck1, end_time)
+    success2 = dispatch.truckDeliverPackages(truck2, end_time)
 
-    while len(dispatch.packages.lookup(delivery_time=None)) > 0:
-        # Load the packages into the trucks
-        dispatch.truckLoadPackages(truck1)
-        if load_truck2:
-            dispatch.truckLoadPackages(truck2)
+    if not success1 or not success2:
+        return (dispatch, truck1, truck2)
 
-        # Deliver the packages
-        success1 = dispatch.truckDeliverPackages(truck1, end_time)
-        success2 = dispatch.truckDeliverPackages(truck2, end_time)
+    dispatch.loadTruckWithPackageList(truck1, truck1_package_logs[1])
+    dispatch.updateAddress()
+    dispatch.loadTruckWithPackageList(truck2, truck2_package_logs[1])
 
-        if not success1 or not success2:
-            break
+    dispatch.truckDeliverPackages(truck1, end_time)
+    dispatch.truckDeliverPackages(truck2, end_time)
 
     return (dispatch, truck1, truck2)
+
 
 def main():
     dispatch, truck1, truck2 = deliver()

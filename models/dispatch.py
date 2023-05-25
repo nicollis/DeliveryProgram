@@ -22,11 +22,13 @@ class Dispatch:
         min_address = None
         for package_id in forTruck.packages:
             package = self.packages.get(package_id)
-            if address == None: print('STOP', package)
             distance = self.distanceBetween(address, package.address)
             if distance != 0.0 and distance < min_distance:
                 min_distance = distance
                 min_address = package.address
+            # if package.deadline_as_time and \
+            #     forTruck.timeAtArrival(distance) >= package.deadline_as_time - datetime.timedelta(minutes=60):
+            #     return (package.address, distance)
         return (min_address, min_distance)
     
     def updateAddress(self):
@@ -58,10 +60,20 @@ class Dispatch:
                 package.status = Status.ENROUTE
                 self.packages[package.id] = package
 
+    def loadTruckWithPackageList(self, forTruck, package_list):
+        if len(package_list) > forTruck.package_capacity:
+            raise Exception('Too many packages for truck')
+
+        for package_id in package_list:
+            package = self.packages[package_id]
+            forTruck.loadPackage(package.id)
+            package.status = Status.ENROUTE
+            self.packages[package.id] = package
+
     # look through packages already on the truck
     # check if there are any packages still at the Hub that are going to the same
     # nearby address as the packages on the truck
-    def priorityNearbyAddresses(self, forTruck, delta=2.0):
+    def priorityNearbyAddresses(self, forTruck, delta=5):
         addresses = set()
         for package_id in forTruck.packages:
             package = self.packages[package_id]
@@ -78,8 +90,9 @@ class Dispatch:
     def loadTruck1WithPriorityPackages(self, truck1):
         # first we want to make sure the grouped packages are all loaded together
         # we then want to load in any packages at the hub with a timed deliver by
-        for package in [self.packages[13], self.packages[15], self.packages[19], 
-                        *self.packages.lookup(flag=Flag.DELIVER_WITH_OTHER_PACKAGES)]:
+        for package in set([self.packages[13], self.packages[15], self.packages[19], 
+                        *self.packages.lookup(flag=Flag.DELIVER_WITH_OTHER_PACKAGES),
+                        *self.packages.lookup(deadline='10:30 AM')]):
             if package.flag != Flag.DELAYED and len(truck1.packages) < truck1.package_capacity:
                 truck1.loadPackage(package.id)
                 package.status = Status.ENROUTE
@@ -97,13 +110,15 @@ class Dispatch:
                 self.packages[package.id] = package
 
     def truckDeliverAllPackagesAtCurrentLocation(self, forTruck):
+        delivered = []
         for package_id in forTruck.packages:
             package = self.packages[package_id]
             if package.address == forTruck.current_location:
                 package.status = Status.DELIVERED
                 package.delivery_time = forTruck.time.time()
-                forTruck.packages.remove(package.id)
+                delivered.append(package.id)
                 self.packages[package.id] = package
+        [forTruck.packages.remove(i) for i in delivered]
     
     def truckDeliverPackages(self, forTruck, end_time=None):
         while len(forTruck.packages) > 0:

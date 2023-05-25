@@ -23,8 +23,11 @@ class Truck:
         else:
             raise Exception(f"Truck {self.id} is full. Cannot load package {package_id}")
         
+    def timeAtArrival(self, distance):
+        minutes_to_deliver = (distance / self.truck_speed) * 60
+        return self.time + datetime.timedelta(minutes=minutes_to_deliver) # type: ignore
+        
     def drive(self, distance, address):
         self.distance += distance
-        minutes_to_deliver = (distance / self.truck_speed) * 60
-        self.time = self.time + datetime.timedelta(minutes=minutes_to_deliver) # type: ignore
+        self.time = self.timeAtArrival(distance)
         self.current_location = address
