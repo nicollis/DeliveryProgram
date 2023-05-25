@@ -7,8 +7,25 @@ class HashTable:
         self._bucket_size = bucket_size
         self._buckets = [ LinkedList() for _ in range(bucket_size)]
 
+    def __iter__(self):
+        for bucket in self._buckets:
+            for item in bucket:
+                yield item
+
     def __str__(self):
         return "\n".join([str(bucket) for bucket in self._buckets if bucket.head is not None])
+    
+    def __getitem__(self, key):
+        return self.get(key)
+    
+    def __setitem__(self, key, data):
+        try:
+           self.update(key, data)
+        except KeyError:
+          self.append(key, data)
+
+    def __delitem__(self, key):
+        self.remove(key)
 
     # for our hash table we are going to expect the key to be the id of the object
     # however to create a well rounded hash function we will use the key as a string
