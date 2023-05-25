@@ -42,15 +42,24 @@ def deliver(end_time=None):
 
     HUB = addresses[0] # the hub is the first address in the list
 
-    truck1 = Truck(1, current_location=HUB)
-    truck2 = Truck(2, current_location=HUB)
+    load_truck2 = True if end_time == None or datetime.datetime.combine(datetime.date.today(), end_time) >= \
+       datetime.datetime.combine(datetime.date.today(), datetime.datetime.strptime('9:05 am', '%I:%M %p').time()) else False
 
+    truck1 = Truck(1, current_location=HUB)
+    truck2 = Truck(2, current_location=HUB, start_time='9:05')
     dispatch = Dispatch(HUB, packages, addresses, distances)
+
+    # Load with priority first
+    dispatch.loadTruck1WithPriorityPackages(truck1)
+
+    if load_truck2: 
+        dispatch.loadTruck2WithPriorityPackages(truck2)
 
     while len(dispatch.packages.lookup(delivery_time=None)) > 0:
         # Load the packages into the trucks
         dispatch.truckLoadPackages(truck1)
-        dispatch.truckLoadPackages(truck2)
+        if load_truck2:
+            dispatch.truckLoadPackages(truck2)
 
         # Deliver the packages
         success1 = dispatch.truckDeliverPackages(truck1, end_time)

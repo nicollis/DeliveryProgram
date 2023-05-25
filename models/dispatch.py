@@ -1,4 +1,7 @@
+import datetime
+
 from models.status import Status
+from models.flag import Flag
 
 class Dispatch:
     def __init__(self, location, packages, addresses, distances):
@@ -26,13 +29,70 @@ class Dispatch:
                 min_address = package.address
         return (min_address, min_distance)
     
+    def updateAddress(self):
+        packages = self.packages.lookup(flag=Flag.WRONG_ADDRESS)
+        if package := packages[0]:
+            package.address = '410 S State St'
+            package.city = 'Salt Lake City'
+            package.zip = '84111'
+            package.status = Status.HUB
+            self.packages[package.id] = package
+
+    
     # For early implementation we are not going to worry about
     # flags or anything special. We are just going to load the
     # packages in the order they are given to us.
     def truckLoadPackages(self, forTruck):
+        # We know a packages address will update at '10:20 AM' we check if the truck looking at packages
+        # is the truck that will be delivering the package. If it is we update the address.
+        wait_until = datetime.datetime.combine(datetime.date.today(), datetime.time(10, 20))
+        if forTruck.time > wait_until: self.updateAddress()
+
+        # Prioritize zipcode loading
+        self.priorityNearbyAddresses(forTruck)
+
+        # fill any additional space
         for package in self.packages.lookup(status=Status.HUB):
             if len(forTruck.packages) < forTruck.package_capacity:
                 forTruck.loadPackage(package.id)
+                package.status = Status.ENROUTE
+                self.packages[package.id] = package
+
+    # look through packages already on the truck
+    # check if there are any packages still at the Hub that are going to the same
+    # nearby address as the packages on the truck
+    def priorityNearbyAddresses(self, forTruck, delta=2.0):
+        addresses = set()
+        for package_id in forTruck.packages:
+            package = self.packages[package_id]
+            addresses.add(package.address)
+        
+        for address in addresses:
+            for package in self.packages.lookup(status=Status.HUB):
+                if self.distanceBetween(address, package.address) < delta and len(forTruck.packages) < forTruck.package_capacity:
+                    forTruck.loadPackage(package.id)
+                    package.status = Status.ENROUTE
+                    self.packages[package.id] = package
+    
+
+    def loadTruck1WithPriorityPackages(self, truck1):
+        # first we want to make sure the grouped packages are all loaded together
+        # we then want to load in any packages at the hub with a timed deliver by
+        for package in [self.packages[13], self.packages[15], self.packages[19], 
+                        *self.packages.lookup(flag=Flag.DELIVER_WITH_OTHER_PACKAGES)]:
+            if package.flag != Flag.DELAYED and len(truck1.packages) < truck1.package_capacity:
+                truck1.loadPackage(package.id)
+                package.status = Status.ENROUTE
+                self.packages[package.id] = package
+
+    def loadTruck2WithPriorityPackages(self, truck2):
+        # we want to keep truck 2 around until 9:05 when the delayed packages arrive
+        # if there is room on truck 2, we want to load the packages that are specific for it
+        for package in [ *self.packages.lookup(flag=Flag.DELAYED, deadline='10:30 AM'),
+                         *self.packages.lookup(flag=Flag.ONLY_TRUCK_2),
+                         *self.packages.lookup(status=Status.HUB)]:
+            if len(truck2.packages) < truck2.package_capacity:
+                truck2.loadPackage(package.id)
                 package.status = Status.ENROUTE
                 self.packages[package.id] = package
 

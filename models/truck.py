@@ -3,7 +3,7 @@ import datetime
 class Truck:
     def __init__(self, id, distance=0.0, time=0, 
                  current_location=None, package_capacity=16, 
-                 truck_speed=18.0, start_time=8
+                 truck_speed=18.0, start_time='8:00'
                  ):
         self.id = id
         self.packages = []
@@ -12,7 +12,7 @@ class Truck:
         self.current_location = current_location
         self.package_capacity = package_capacity
         self.truck_speed = truck_speed
-        self.time = datetime.datetime.combine(datetime.date.today(), datetime.time(hour=start_time))
+        self.time = datetime.datetime.combine(datetime.date.today(), datetime.datetime.strptime(start_time, '%I:%M').time())
 
     def __str__(self):
         return f"Truck {self.id} ({self.current_location} {self.distance} {self.time.time()} {self.packages})" # type: ignore
