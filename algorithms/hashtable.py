@@ -81,3 +81,18 @@ class HashTable:
         except KeyError as e:
           # Catch the exception and re-raise it
           raise e
+        
+    def copy(self):
+        new_table = HashTable(self._bucket_size)
+        for bucket in self._buckets:
+            new_table._buckets.append(bucket.copy())
+        return new_table
+    
+    def lookup(self, **kwargs):
+       matches = []
+       for bucket in self._buckets:
+           for item in bucket:
+               for key, value in kwargs.items():
+                   if getattr(item, key) == value:
+                       matches.append(item)
+       return matches

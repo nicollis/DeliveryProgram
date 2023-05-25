@@ -30,12 +30,11 @@ class Dispatch:
     # flags or anything special. We are just going to load the
     # packages in the order they are given to us.
     def truckLoadPackages(self, forTruck):
-        for package in self.packages:
-            if package.status == Status.HUB:
-                if len(forTruck.packages) < forTruck.package_capacity:
-                    forTruck.loadPackage(package.id)
-                    package.status = Status.ENROUTE
-                    self.packages[package.id] = package
+        for package in self.packages.lookup(status=Status.HUB):
+            if len(forTruck.packages) < forTruck.package_capacity:
+                forTruck.loadPackage(package.id)
+                package.status = Status.ENROUTE
+                self.packages[package.id] = package
 
     def truckDeliverAllPackagesAtCurrentLocation(self, forTruck):
         for package_id in forTruck.packages:
@@ -46,13 +45,10 @@ class Dispatch:
                 forTruck.packages.remove(package.id)
                 self.packages[package.id] = package
     
-    def truckDeliverPackages(self, forTruck):
-        truck_history = {}
+    def truckDeliverPackages(self, forTruck, end_time=None):
         while len(forTruck.packages) > 0:
           # deliver packages for this address
           self.truckDeliverAllPackagesAtCurrentLocation(forTruck)
-          
-          truck_history[forTruck.time.time()] = self.packages
 
           if len(forTruck.packages) == 0: break
           # find the next address and travel there
@@ -60,10 +56,12 @@ class Dispatch:
           if distance == float('inf'): break
           # drive the truck to the next address
           forTruck.drive(distance, next_address)
+          # if the truck has passed the end time, stop
+          if end_time != None and forTruck.time.time() > end_time: break
         # send the truck home
         to_hub = self.distanceBetween(forTruck.current_location, self.hub)
         forTruck.drive(to_hub, self.hub)
 
-        return truck_history
+        return False if end_time != None and forTruck.time.time() > end_time else True
 
     

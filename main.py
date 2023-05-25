@@ -1,4 +1,5 @@
 import csv
+import datetime
 
 from algorithms.hashtable import HashTable
 from models.package import Package
@@ -14,7 +15,7 @@ def loadPageData():
         next(reader) # skip header row
         for row in reader:
             try: 
-                package = Package(int(row[0]), row[1], int(row[4]), row[5], int(row[6]), row[7]) # todo: classify flags
+                package = Package(int(row[0]), row[1], row[2], int(row[4]), row[5], int(row[6]), row[7]) # todo: classify flags
                 packages.append(package.id, package)
             except ValueError as e:
                 print(f"Problem loading the package with id: {row[0]} into the hash table.\n {e}")
@@ -33,8 +34,7 @@ def loadDistanceData():
 
     return (addresses, distances)
 
-
-def main():
+def deliver(end_time=None):
     # Load in the packages
     packages = loadPageData()
     # Load in the distances
@@ -44,23 +44,25 @@ def main():
 
     truck1 = Truck(1, current_location=HUB)
     truck2 = Truck(2, current_location=HUB)
-    truck_histories = [{}, {}]
 
     dispatch = Dispatch(HUB, packages, addresses, distances)
 
-    # Load the packages into the trucks
-    dispatch.truckLoadPackages(truck1)
-    dispatch.truckLoadPackages(truck2)
+    while len(dispatch.packages.lookup(delivery_time=None)) > 0:
+        # Load the packages into the trucks
+        dispatch.truckLoadPackages(truck1)
+        dispatch.truckLoadPackages(truck2)
 
-    truck_histories[0].update(dispatch.truckDeliverPackages(truck1))
-    truck_histories[1].update(dispatch.truckDeliverPackages(truck2))
+        # Deliver the packages
+        success1 = dispatch.truckDeliverPackages(truck1, end_time)
+        success2 = dispatch.truckDeliverPackages(truck2, end_time)
 
-    dispatch.truckLoadPackages(truck1)
-    dispatch.truckLoadPackages(truck2)
+        if not success1 or not success2:
+            break
 
-    truck_histories[0].update(dispatch.truckDeliverPackages(truck1))
-    truck_histories[1].update(dispatch.truckDeliverPackages(truck2))
+    return (dispatch, truck1, truck2)
 
+def main():
+    dispatch, truck1, truck2 = deliver()
 
     # UI
     while True:
@@ -76,19 +78,30 @@ def main():
         option = input("Please enter your selection: (1-4): ")
         match option:
             case '1':
+                print(Package.printHeader())
                 print(dispatch.packages)
                 distance = truck1.distance + truck2.distance
                 print(f"Total mileage: {distance:.1f}")
             case '2':
                 package_id = input("Please enter the package id: ")
+                time = input("Please enter the time: (HH:MM AM/PM): ")
                 try:
-                    package = dispatch.packages.get(int(package_id))
+                    time_obj = datetime.datetime.strptime(time, "%I:%M %p")
+                    _dispatch, _, _ = deliver(end_time=time_obj.time())
+                    package = _dispatch.packages.get(int(package_id))
+                    print(Package.printHeader())
                     print(package)
                 except ValueError:
-                    print("Invalid package id. Please try again.")
+                    print("Invalid package id or time. Please try again.")
             case '3':
-                time = input("Please enter the time: ")
-                print(dispatch.packages)
+                time = input("Please enter the time: (HH:MM AM/PM): ")
+                try:
+                    time_obj = datetime.datetime.strptime(time, "%I:%M %p")
+                    _dispatch, _, _ = deliver(end_time=time_obj.time())
+                    print(Package.printHeader())
+                    print(_dispatch.packages)
+                except ValueError:
+                    print("Invalid time. Please try again.")
             case '4':
                 print("Thank you for using the WGUPS package delivery system.")
                 exit()
@@ -97,10 +110,5 @@ def main():
         print()
 
 
-    
-
-    
-    
-            
 if __name__ == '__main__':
     main()

@@ -7,4 +7,4 @@ class Node:
         self.next = None
 
     def __str__(self):
-        return f'Node({self.key}, {self.data})'
+        return f'{self.data}'

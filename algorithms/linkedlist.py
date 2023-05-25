@@ -77,3 +77,11 @@ class LinkedList:
       previous_node = current_node
       current_node = current_node.next
     raise KeyError(key)
+  
+  def copy(self):
+        new_list = LinkedList()
+        current_node = self.head
+        while current_node is not None:
+            new_list.append(current_node.key, current_node.data)
+            current_node = current_node.next
+        return new_list
