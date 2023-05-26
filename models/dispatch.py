@@ -3,6 +3,7 @@ import datetime
 from models.status import Status
 from models.flag import Flag
 
+
 class Dispatch:
     def __init__(self, location, packages, addresses, distances):
         self.hub = location
@@ -29,8 +30,8 @@ class Dispatch:
             # if package.deadline_as_time and \
             #     forTruck.timeAtArrival(distance) >= package.deadline_as_time - datetime.timedelta(minutes=60):
             #     return (package.address, distance)
-        return (min_address, min_distance)
-    
+        return min_address, min_distance
+
     def updateAddress(self):
         packages = self.packages.lookup(flag=Flag.WRONG_ADDRESS)
         if package := packages[0]:
@@ -40,7 +41,6 @@ class Dispatch:
             package.status = Status.HUB
             self.packages[package.id] = package
 
-    
     # For early implementation we are not going to worry about
     # flags or anything special. We are just going to load the
     # packages in the order they are given to us.
@@ -78,21 +78,21 @@ class Dispatch:
         for package_id in forTruck.packages:
             package = self.packages[package_id]
             addresses.add(package.address)
-        
+
         for address in addresses:
             for package in self.packages.lookup(status=Status.HUB):
-                if self.distanceBetween(address, package.address) < delta and len(forTruck.packages) < forTruck.package_capacity:
+                if self.distanceBetween(address, package.address) < delta and len(
+                        forTruck.packages) < forTruck.package_capacity:
                     forTruck.loadPackage(package.id)
                     package.status = Status.ENROUTE
                     self.packages[package.id] = package
-    
 
     def loadTruck1WithPriorityPackages(self, truck1):
         # first we want to make sure the grouped packages are all loaded together
-        # we then want to load in any packages at the hub with a timed deliver by
-        for package in set([self.packages[13], self.packages[15], self.packages[19], 
+        # we then want to load in any packages at the hub with a timed delivery by
+        for package in {self.packages[13], self.packages[15], self.packages[19],
                         *self.packages.lookup(flag=Flag.DELIVER_WITH_OTHER_PACKAGES),
-                        *self.packages.lookup(deadline='10:30 AM')]):
+                        *self.packages.lookup(deadline='10:30 AM')}:
             if package.flag != Flag.DELAYED and len(truck1.packages) < truck1.package_capacity:
                 truck1.loadPackage(package.id)
                 package.status = Status.ENROUTE
@@ -101,9 +101,9 @@ class Dispatch:
     def loadTruck2WithPriorityPackages(self, truck2):
         # we want to keep truck 2 around until 9:05 when the delayed packages arrive
         # if there is room on truck 2, we want to load the packages that are specific for it
-        for package in [ *self.packages.lookup(flag=Flag.DELAYED, deadline='10:30 AM'),
-                         *self.packages.lookup(flag=Flag.ONLY_TRUCK_2),
-                         *self.packages.lookup(status=Status.HUB)]:
+        for package in [*self.packages.lookup(flag=Flag.DELAYED, deadline='10:30 AM'),
+                        *self.packages.lookup(flag=Flag.ONLY_TRUCK_2),
+                        *self.packages.lookup(status=Status.HUB)]:
             if len(truck2.packages) < truck2.package_capacity:
                 truck2.loadPackage(package.id)
                 package.status = Status.ENROUTE
@@ -119,24 +119,22 @@ class Dispatch:
                 delivered.append(package.id)
                 self.packages[package.id] = package
         [forTruck.packages.remove(i) for i in delivered]
-    
+
     def truckDeliverPackages(self, forTruck, end_time=None):
         while len(forTruck.packages) > 0:
-          # deliver packages for this address
-          self.truckDeliverAllPackagesAtCurrentLocation(forTruck)
+            # deliver packages for this address
+            self.truckDeliverAllPackagesAtCurrentLocation(forTruck)
 
-          if len(forTruck.packages) == 0: break
-          # find the next address and travel there
-          next_address, distance = self.minDistanceFrom(forTruck.current_location, forTruck)
-          if distance == float('inf'): break
-          # drive the truck to the next address
-          forTruck.drive(distance, next_address)
-          # if the truck has passed the end time, stop
-          if end_time != None and forTruck.time.time() > end_time: break
+            if len(forTruck.packages) == 0: break
+            # find the next address and travel there
+            next_address, distance = self.minDistanceFrom(forTruck.current_location, forTruck)
+            if distance == float('inf'): break
+            # drive the truck to the next address
+            forTruck.drive(distance, next_address)
+            # if the truck has passed the end time, stop
+            if end_time is not None and forTruck.time.time() > end_time: break
         # send the truck home
         to_hub = self.distanceBetween(forTruck.current_location, self.hub)
         forTruck.drive(to_hub, self.hub)
 
-        return False if end_time != None and forTruck.time.time() > end_time else True
-
-    
+        return False if end_time is not None and forTruck.time.time() > end_time else True

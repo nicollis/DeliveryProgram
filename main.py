@@ -56,6 +56,7 @@ def deliver(end_time=None):
         [10, 5, 38, 3, 9, 2, 33]
     ]
 
+    # if end_time is before 9:05 am, then we avoid loading truck 2 as it will not be used
     load_truck2 = True if end_time == None or datetime.datetime.combine(datetime.date.today(), end_time) >= \
                           datetime.datetime.combine(datetime.date.today(),
                                                     datetime.datetime.strptime('9:05 am', '%I:%M %p').time()) else False
