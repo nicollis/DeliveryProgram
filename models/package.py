@@ -11,6 +11,7 @@ class Package:
         self.city = city
         self.zip = zip
         self.deadline = deadline
+        # Helper value so we don't have to keep converting deadline to datetime
         if deadline != 'EOD':
             self.deadline_as_time = datetime.datetime.combine(datetime.date.today(),
                                                               datetime.datetime.strptime(deadline, '%I:%M %p').time())
@@ -22,6 +23,7 @@ class Package:
         self.status = Status.HUB if flag != Flag.DELAYED or flag != Flag.WRONG_ADDRESS else Status.DELAYED
         self.delivery_time = None
 
+    # Our function for printing the required information for a package
     def __str__(self):
         dt = self.delivery_time.strftime("%I:%M %p") if self.delivery_time else "N/A"
 
@@ -38,6 +40,7 @@ class Package:
         return "{:<3}\t{:<10}\t{:<10}\t{:<10}\t{:<10}\t{:<10}\t{:<35}".format(self.id, self.status, self.weight,
                                                                               self.deadline, dt, on_time, self.address)
 
+    # Our function for printing the header for the package table
     @staticmethod
     def printHeader():
         return "{:<3}\t{:<10}\t{:<10}\t{:<10}\t{:<10}\t{:<35}".format("ID", "STATUS", "WEIGHT", "DEADLINE",

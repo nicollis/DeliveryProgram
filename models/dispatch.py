@@ -27,11 +27,9 @@ class Dispatch:
             if distance != 0.0 and distance < min_distance:
                 min_distance = distance
                 min_address = package.address
-            # if package.deadline_as_time and \
-            #     forTruck.timeAtArrival(distance) >= package.deadline_as_time - datetime.timedelta(minutes=60):
-            #     return (package.address, distance)
         return min_address, min_distance
 
+    # Our function for updating package #9 once the clock hits 10:20 AM
     def updateAddress(self):
         packages = self.packages.lookup(flag=Flag.WRONG_ADDRESS)
         if package := packages[0]:
@@ -41,25 +39,8 @@ class Dispatch:
             package.status = Status.HUB
             self.packages[package.id] = package
 
-    # For early implementation we are not going to worry about
-    # flags or anything special. We are just going to load the
-    # packages in the order they are given to us.
-    def truckLoadPackages(self, forTruck):
-        # We know a packages address will update at '10:20 AM' we check if the truck looking at packages
-        # is the truck that will be delivering the package. If it is we update the address.
-        wait_until = datetime.datetime.combine(datetime.date.today(), datetime.time(10, 20))
-        if forTruck.time > wait_until: self.updateAddress()
-
-        # Prioritize zipcode loading
-        self.priorityNearbyAddresses(forTruck)
-
-        # fill any additional space
-        for package in self.packages.lookup(status=Status.HUB):
-            if len(forTruck.packages) < forTruck.package_capacity:
-                forTruck.loadPackage(package.id)
-                package.status = Status.ENROUTE
-                self.packages[package.id] = package
-
+    # Our function for loading packages onto our tucks and updating their status
+    # O(N) where N is the number of packages in given truck
     def loadTruckWithPackageList(self, forTruck, package_list):
         if len(package_list) > forTruck.package_capacity:
             raise Exception('Too many packages for truck')
@@ -70,45 +51,11 @@ class Dispatch:
             package.status = Status.ENROUTE
             self.packages[package.id] = package
 
-    # look through packages already on the truck
-    # check if there are any packages still at the Hub that are going to the same
-    # nearby address as the packages on the truck
-    def priorityNearbyAddresses(self, forTruck, delta=5):
-        addresses = set()
-        for package_id in forTruck.packages:
-            package = self.packages[package_id]
-            addresses.add(package.address)
-
-        for address in addresses:
-            for package in self.packages.lookup(status=Status.HUB):
-                if self.distanceBetween(address, package.address) < delta and len(
-                        forTruck.packages) < forTruck.package_capacity:
-                    forTruck.loadPackage(package.id)
-                    package.status = Status.ENROUTE
-                    self.packages[package.id] = package
-
-    def loadTruck1WithPriorityPackages(self, truck1):
-        # first we want to make sure the grouped packages are all loaded together
-        # we then want to load in any packages at the hub with a timed delivery by
-        for package in {self.packages[13], self.packages[15], self.packages[19],
-                        *self.packages.lookup(flag=Flag.DELIVER_WITH_OTHER_PACKAGES),
-                        *self.packages.lookup(deadline='10:30 AM')}:
-            if package.flag != Flag.DELAYED and len(truck1.packages) < truck1.package_capacity:
-                truck1.loadPackage(package.id)
-                package.status = Status.ENROUTE
-                self.packages[package.id] = package
-
-    def loadTruck2WithPriorityPackages(self, truck2):
-        # we want to keep truck 2 around until 9:05 when the delayed packages arrive
-        # if there is room on truck 2, we want to load the packages that are specific for it
-        for package in [*self.packages.lookup(flag=Flag.DELAYED, deadline='10:30 AM'),
-                        *self.packages.lookup(flag=Flag.ONLY_TRUCK_2),
-                        *self.packages.lookup(status=Status.HUB)]:
-            if len(truck2.packages) < truck2.package_capacity:
-                truck2.loadPackage(package.id)
-                package.status = Status.ENROUTE
-                self.packages[package.id] = package
-
+    # Our function for delivering packages at our current location
+    # We have to loop through delivered packages twice due to a issue where
+    # if you update the package list while looping though it packages can be skipped
+    # due to shifting indexes
+    # O(N) where N is the number of packages in given truck
     def truckDeliverAllPackagesAtCurrentLocation(self, forTruck):
         delivered = []
         for package_id in forTruck.packages:
@@ -120,14 +67,20 @@ class Dispatch:
                 self.packages[package.id] = package
         [forTruck.packages.remove(i) for i in delivered]
 
+    # Our main function for deliver packages and stopping if the user as requested a stop time
+    # We loop until all packages are delivered from the truck
+    # We deliver all packages at our current address
+    # If we still have packages we use a greedy algorithm to find the closest address and travel there
+    # Once we have delivered all packages we return to the hub
+    # O(n^k) where N is the number of addresses and K is the number of packages in given truck
     def truckDeliverPackages(self, forTruck, end_time=None):
-        while len(forTruck.packages) > 0:
+        while len(forTruck.packages) > 0: # O(N) where N is the number of addresses we visit as we deliver packages by address not by package
             # deliver packages for this address
-            self.truckDeliverAllPackagesAtCurrentLocation(forTruck)
+            self.truckDeliverAllPackagesAtCurrentLocation(forTruck) # O(N) where N is the number of packages in given truck
 
             if len(forTruck.packages) == 0: break
             # find the next address and travel there
-            next_address, distance = self.minDistanceFrom(forTruck.current_location, forTruck)
+            next_address, distance = self.minDistanceFrom(forTruck.current_location, forTruck) # O(N) where N is the number of packages in given truck
             if distance == float('inf'): break
             # drive the truck to the next address
             forTruck.drive(distance, next_address)

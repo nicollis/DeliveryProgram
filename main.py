@@ -23,7 +23,8 @@ def load_page_data():
                 print(f"Problem loading the package with id: {row[0]} into the hash table.\n {e}")
     return packages
 
-
+# reads data from distances.csv and loads into a list of addresses and a list of distances
+# O(n) where n is the number of addresses
 def load_distance_data():
     addresses = []
     distances = []
@@ -37,12 +38,14 @@ def load_distance_data():
 
     return (addresses, distances)
 
-
+# Our main function for delivering packages
+# O(n^k) where n is the number of addresses and k is the number of packages
+# Due to use avoid loops in this function, we condense the time complexity to O(n^k) as it is the most expensive
 def deliver(end_time=None):
     # Load in the packages
-    packages = load_page_data()
+    packages = load_page_data() # O(n) where n is the number of packages
     # Load in the distances
-    addresses, distances = load_distance_data()
+    addresses, distances = load_distance_data() # O(n) where n is the number of addresses
 
     HUB = addresses[0]  # the hub is the first address in the list
 
@@ -65,26 +68,27 @@ def deliver(end_time=None):
     truck2 = Truck(2, current_location=HUB, start_time='9:05')
     dispatch = Dispatch(HUB, packages, addresses, distances)
 
-    dispatch.loadTruckWithPackageList(truck1, truck1_package_logs[0])
+    dispatch.loadTruckWithPackageList(truck1, truck1_package_logs[0]) # O(n) where n is the number of packages
     if load_truck2:
-        dispatch.loadTruckWithPackageList(truck2, truck2_package_logs[0])
+        dispatch.loadTruckWithPackageList(truck2, truck2_package_logs[0])   # O(n) where n is the number of packages
 
-    success1 = dispatch.truckDeliverPackages(truck1, end_time)
-    success2 = dispatch.truckDeliverPackages(truck2, end_time)
+    success1 = dispatch.truckDeliverPackages(truck1, end_time)  # O(n^k) where n is the number of addresses and k is the number of packages
+    success2 = dispatch.truckDeliverPackages(truck2, end_time)  # O(n^k) where n is the number of addresses and k is the number of packages
 
     if not success1 or not success2:
         return (dispatch, truck1, truck2)
 
-    dispatch.loadTruckWithPackageList(truck1, truck1_package_logs[1])
-    dispatch.updateAddress()
-    dispatch.loadTruckWithPackageList(truck2, truck2_package_logs[1])
+    dispatch.loadTruckWithPackageList(truck1, truck1_package_logs[1]) # O(n) where n is the number of packages
+    dispatch.updateAddress() # O(1)
+    dispatch.loadTruckWithPackageList(truck2, truck2_package_logs[1]) # O(n) where n is the number of packages
 
-    dispatch.truckDeliverPackages(truck1, end_time)
-    dispatch.truckDeliverPackages(truck2, end_time)
+    dispatch.truckDeliverPackages(truck1, end_time) # O(n^k) where n is the number of addresses and k is the number of packages
+    dispatch.truckDeliverPackages(truck2, end_time) # O(n^k) where n is the number of addresses and k is the number of packages
 
     return (dispatch, truck1, truck2)
 
 
+# Main function of the software and loop for the UI
 def main():
     dispatch, truck1, truck2 = deliver()
 

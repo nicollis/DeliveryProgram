@@ -6,5 +6,6 @@ class Node:
         self.data = data
         self.next = None
 
+    # When printing a node we only want to print the data
     def __str__(self):
         return f'{self.data}'

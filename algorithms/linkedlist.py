@@ -6,12 +6,14 @@ class LinkedList:
         self.head = None
         self.tail = None
 
+    # Allow the user to iterate over the linked list
     def __iter__(self):
         current_node = self.head
         while current_node is not None:
             yield current_node.data
             current_node = current_node.next
 
+    # Makes printing the linked list easier
     def __str__(self):
         current_node = self.head
         string = ''
@@ -78,6 +80,7 @@ class LinkedList:
             current_node = current_node.next
         raise KeyError(key)
 
+    # Unused but useful
     def copy(self):
         new_list = LinkedList()
         current_node = self.head
