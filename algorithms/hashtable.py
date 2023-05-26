@@ -1,6 +1,12 @@
 from algorithms.linkedlist import LinkedList
 
 
+# Hash Table backed by a self-adjusting linked list
+# This hash table stores data in buckets, each bucket is a linked list
+# The bucket is determined by the hash of the key, the key can be any hashable object
+# In case of a collision, the new item is appended to the linked list
+# Collisions are handled by chaining, and can be minimized by using a large bucket size
+# Items are stored in key-value pairs
 class HashTable:
     _bucket_size = 61  # rule of thumb is to use a prime number between 1.5 and 2 times the number of expected entries
 
@@ -15,7 +21,7 @@ class HashTable:
 
     # Provide a string representation of the hash table
     def __str__(self):
-        return "\n".join([str(bucket) for bucket in self._buckets if bucket.head is not None])
+        return "".join([str(bucket) for bucket in self._buckets if bucket.head is not None])
 
     # Allow the user to use the hash table as a dictionary
     def __getitem__(self, key):
@@ -38,7 +44,8 @@ class HashTable:
     # user to pass in either a string or an integer, for the option of a hash function that
     # will provide a highly unique hash value but cost O(n) time complexity where n is the length of the key;
     # or a hash function that will provide a less unique hash value but cost O(1) time complexity.
-    # O(n) or O(1) time complexity based on the key type (string or integer)
+    # Time Complexity: O(n) or O(1) time complexity based on the key type (string or integer)
+    # Space Complexity: O(1)
     def _hash(self, key):
         if isinstance(key, str):
             hash_multiplier = 31
@@ -50,7 +57,8 @@ class HashTable:
         else:
             return key % self._bucket_size
 
-    # O(n) where n is the number of hash collisions
+    # Time Complexity: O(n) where n is the number of hash collisions
+    # Space Complexity: O(1)
     def get(self, key):
         index = self._hash(key)
         bucket = self._buckets[index]
@@ -60,13 +68,15 @@ class HashTable:
             # Catch the exception and re-raise it
             raise e
 
-    # O(1)
+    # Time Complexity: O(1)
+    # Space Complexity: O(1)
     def append(self, key, data):
         index = self._hash(key)
         bucket = self._buckets[index]
         bucket.append(key, data)
 
-    # O(n) where n is the number of hash collisions
+    # Time Complexity: O(n) where n is the number of hash collisions
+    # Space Complexity: O(1)
     def update(self, key, data):
         index = self._hash(key)
         bucket = self._buckets[index]
@@ -77,7 +87,8 @@ class HashTable:
             # Catch the exception and re-raise it
             raise e
 
-    # O(n) where n is the number of hash collisions
+    # Time Complexity: O(n) where n is the number of hash collisions
+    # Space Complexity: O(1)
     def remove(self, key):
         index = self._hash(key)
         bucket = self._buckets[index]
@@ -88,6 +99,8 @@ class HashTable:
             raise e
 
     # Ultimately unused but a good method to have
+    # Time Complexity: O(n) where n is the number of buckets
+    # Space Complexity: O(n) where n is the number of buckets
     def copy(self):
         new_table = HashTable(self._bucket_size)
         for bucket in self._buckets:
@@ -96,8 +109,9 @@ class HashTable:
 
     # Allows for the user to search the hash table for a specific item
     # This search is object independent and can apply to any object stored in the hash table
-    # O(n^c^k) where n is the number of buckets and c is the number of hash collisions and k is the number of kwargs
+    # Time Complexity: O(n^c^k) where n is the number of buckets and c is the number of hash collisions and k is the number of kwargs
     # Consider collisions to be a constant and rare, this becomes O(n^k)
+    # Space Complexity: O(n) where n is the number of items in the hash table
     def lookup(self, **kwargs):
         matches = []
         for bucket in self._buckets:

@@ -1,3 +1,5 @@
+# Author: Nicholas Ollis
+# Student ID: #011097828
 import csv
 import datetime
 
@@ -8,7 +10,8 @@ from models.dispatch import Dispatch
 
 
 # read data from package.csv and load into our hash table
-# O(n) where n is the number of packages
+# Time Complexity: O(n) where n is the number of packages
+# Space Complexity: O(n) where n is the number of packages
 def load_page_data():
     packages = HashTable()
     with open('data/packages.csv') as file:
@@ -23,8 +26,11 @@ def load_page_data():
                 print(f"Problem loading the package with id: {row[0]} into the hash table.\n {e}")
     return packages
 
-# reads data from distances.csv and loads into a list of addresses and a list of distances
-# O(n) where n is the number of addresses
+# reads data from distances.csv and loads into a list of addresses and a list of distances.
+# distance is a multidimensional list where the first index is the address and the second index
+# is the other address we want the distance too.
+# Time Complexity: O(n) where n is the number of addresses
+# Space Complexity: O(n^2) where n is the number of addresses
 def load_distance_data():
     addresses = []
     distances = []
@@ -39,13 +45,14 @@ def load_distance_data():
     return (addresses, distances)
 
 # Our main function for delivering packages
-# O(n^k) where n is the number of addresses and k is the number of packages
+# Time Complexity: O(n^k) where n is the number of addresses and k is the number of packages
 # Due to use avoid loops in this function, we condense the time complexity to O(n^k) as it is the most expensive
+# Space Complexity: O(P+A^2) where P is the number of packages, A is the number of addresses
 def deliver(end_time=None):
     # Load in the packages
-    packages = load_page_data() # O(n) where n is the number of packages
+    packages = load_page_data() # Time Complexity: O(n) where n is the number of packages
     # Load in the distances
-    addresses, distances = load_distance_data() # O(n) where n is the number of addresses
+    addresses, distances = load_distance_data() # Time Complexity: O(n) where n is the number of addresses
 
     HUB = addresses[0]  # the hub is the first address in the list
 
@@ -64,26 +71,32 @@ def deliver(end_time=None):
                           datetime.datetime.combine(datetime.date.today(),
                                                     datetime.datetime.strptime('9:05 am', '%I:%M %p').time()) else False
 
+    # Create our trucks and dispatch
     truck1 = Truck(1, current_location=HUB)
     truck2 = Truck(2, current_location=HUB, start_time='9:05')
     dispatch = Dispatch(HUB, packages, addresses, distances)
 
-    dispatch.loadTruckWithPackageList(truck1, truck1_package_logs[0]) # O(n) where n is the number of packages
+    # Load the trucks with the packages
+    dispatch.loadTruckWithPackageList(truck1, truck1_package_logs[0]) # Time Complexity: O(n) where n is the number of packages
     if load_truck2:
-        dispatch.loadTruckWithPackageList(truck2, truck2_package_logs[0])   # O(n) where n is the number of packages
+        dispatch.loadTruckWithPackageList(truck2, truck2_package_logs[0])   # Time Complexity: O(n) where n is the number of packages
 
-    success1 = dispatch.truckDeliverPackages(truck1, end_time)  # O(n^k) where n is the number of addresses and k is the number of packages
-    success2 = dispatch.truckDeliverPackages(truck2, end_time)  # O(n^k) where n is the number of addresses and k is the number of packages
+    # Deliver the packages
+    success1 = dispatch.truckDeliverPackages(truck1, end_time)  # Time Complexity: O(n^k) where n is the number of addresses and k is the number of packages
+    success2 = dispatch.truckDeliverPackages(truck2, end_time)  # Time Complexity: O(n^k) where n is the number of addresses and k is the number of packages
 
+    # This is our logic check if we have hit the end time request by the user and need to return the program early
     if not success1 or not success2:
         return (dispatch, truck1, truck2)
 
-    dispatch.loadTruckWithPackageList(truck1, truck1_package_logs[1]) # O(n) where n is the number of packages
-    dispatch.updateAddress() # O(1)
-    dispatch.loadTruckWithPackageList(truck2, truck2_package_logs[1]) # O(n) where n is the number of packages
+    # Load the second set of packages and update the address of package 9
+    dispatch.loadTruckWithPackageList(truck1, truck1_package_logs[1]) # Time Complexity: O(n) where n is the number of packages
+    dispatch.updateAddress() # Time Complexity: O(1)
+    dispatch.loadTruckWithPackageList(truck2, truck2_package_logs[1]) # Time Complexity: O(n) where n is the number of packages
 
-    dispatch.truckDeliverPackages(truck1, end_time) # O(n^k) where n is the number of addresses and k is the number of packages
-    dispatch.truckDeliverPackages(truck2, end_time) # O(n^k) where n is the number of addresses and k is the number of packages
+    # Deliver the last packages
+    dispatch.truckDeliverPackages(truck1, end_time) # Time Complexity: O(n^k) where n is the number of addresses and k is the number of packages
+    dispatch.truckDeliverPackages(truck2, end_time) # Time Complexity: O(n^k) where n is the number of addresses and k is the number of packages
 
     return (dispatch, truck1, truck2)
 

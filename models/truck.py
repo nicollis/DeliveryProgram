@@ -21,6 +21,8 @@ class Truck:
         return f"Truck {self.id} ({self.current_location} {self.distance} {self.time.time()} {self.packages})"
 
     # Function that managed to load packages into a truck and raise an exception if the truck is full
+    # Time complexity: O(1)
+    # Space complexity: O(1)
     def loadPackage(self, package_id):
         if len(self.packages) < self.package_capacity:
             self.packages.append(package_id)
@@ -28,11 +30,15 @@ class Truck:
             raise Exception(f"Truck {self.id} is full. Cannot load package {package_id}")
 
     # A function that returns the time at which the truck will arrive at a given distance
+    # Time complexity: O(1)
+    # Space complexity: O(1)
     def timeAtArrival(self, distance):
         minutes_to_deliver = (distance / self.truck_speed) * 60
         return self.time + datetime.timedelta(minutes=minutes_to_deliver)
 
     # Our function for moving the truck and updating its distance, time, and current location
+    # Time complexity: O(1)
+    # Space complexity: O(1)
     def drive(self, distance, address):
         self.distance += distance
         self.time = self.timeAtArrival(distance)

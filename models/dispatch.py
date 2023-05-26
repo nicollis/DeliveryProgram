@@ -11,13 +11,15 @@ class Dispatch:
         self.addresses = addresses
         self.distances = distances
 
-    # O(N) where N is the number of addresses
+    # Time Complexity: O(N) where N is the number of addresses
+    # Space Complexity: O(1)
     def distanceBetween(self, address1, address2):
         address1_index = self.addresses.index(address1)
         address2_index = self.addresses.index(address2)
         return self.distances[address1_index][address2_index]
 
-    # O(N) where N is the number of packages in given truck
+    # Time Complexity: O(N) where N is the number of packages in given truck
+    # Space Complexity: O(1)
     def minDistanceFrom(self, address, forTruck):
         min_distance = float('inf')
         min_address = None
@@ -30,6 +32,12 @@ class Dispatch:
         return min_address, min_distance
 
     # Our function for updating package #9 once the clock hits 10:20 AM
+    # We use the lookup function to find the package with the flag WRONG_ADDRESS
+    # This creates a large time and space complexity in the worst case.
+    # However, we know in our case this would only return 1 package.
+    # But to make this more "adaptable and scalable" I used the more complex lookup function
+    # Time Complexity: O(N^k) where N is the number of addresses and K is the number of packages
+    # Space Complexity: O(N) where N is the number of packages
     def updateAddress(self):
         packages = self.packages.lookup(flag=Flag.WRONG_ADDRESS)
         if package := packages[0]:
@@ -40,7 +48,8 @@ class Dispatch:
             self.packages[package.id] = package
 
     # Our function for loading packages onto our tucks and updating their status
-    # O(N) where N is the number of packages in given truck
+    # Time Complexity: O(N) where N is the number of packages in given truck
+    # Space Complexity: O(1)
     def loadTruckWithPackageList(self, forTruck, package_list):
         if len(package_list) > forTruck.package_capacity:
             raise Exception('Too many packages for truck')
@@ -52,10 +61,11 @@ class Dispatch:
             self.packages[package.id] = package
 
     # Our function for delivering packages at our current location
-    # We have to loop through delivered packages twice due to a issue where
+    # We have to loop through delivered packages twice due to an issue where
     # if you update the package list while looping though it packages can be skipped
     # due to shifting indexes
-    # O(N) where N is the number of packages in given truck
+    # Time Complexity: O(N) where N is the number of packages in given truck
+    # Space Complexity: O(N) where N is the number of delivered packages at the given address
     def truckDeliverAllPackagesAtCurrentLocation(self, forTruck):
         delivered = []
         for package_id in forTruck.packages:
@@ -72,15 +82,16 @@ class Dispatch:
     # We deliver all packages at our current address
     # If we still have packages we use a greedy algorithm to find the closest address and travel there
     # Once we have delivered all packages we return to the hub
-    # O(n^k) where N is the number of addresses and K is the number of packages in given truck
+    # Time Complexity: O(n^k) where N is the number of addresses and K is the number of packages in given truck
+    # Space Complexity: O(N) where N is the maximum number of packages delivered to any one address
     def truckDeliverPackages(self, forTruck, end_time=None):
-        while len(forTruck.packages) > 0: # O(N) where N is the number of addresses we visit as we deliver packages by address not by package
+        while len(forTruck.packages) > 0: # Time Complexity: O(N) where N is the number of addresses we visit as we deliver packages by address not by package
             # deliver packages for this address
-            self.truckDeliverAllPackagesAtCurrentLocation(forTruck) # O(N) where N is the number of packages in given truck
+            self.truckDeliverAllPackagesAtCurrentLocation(forTruck) # Time Complexity: O(N) where N is the number of packages in given truck
 
             if len(forTruck.packages) == 0: break
             # find the next address and travel there
-            next_address, distance = self.minDistanceFrom(forTruck.current_location, forTruck) # O(N) where N is the number of packages in given truck
+            next_address, distance = self.minDistanceFrom(forTruck.current_location, forTruck) # Time Complexity: O(N) where N is the number of packages in given truck
             if distance == float('inf'): break
             # drive the truck to the next address
             forTruck.drive(distance, next_address)
