@@ -29,40 +29,44 @@ def load_page_data():
 # reads data from distances.csv and loads into a list of addresses and a list of distances.
 # distance is a multidimensional list where the first index is the address and the second index
 # is the other address we want the distance too.
-# Time Complexity: O(n) where n is the number of addresses
+# Time Complexity: O(n^2) where n is the number of addresses
 # Space Complexity: O(n^2) where n is the number of addresses
 def load_distance_data():
     addresses = []
+    address_indices = {}
     distances = []
     with open('data/distances.csv') as file:
         reader = csv.reader(file)
         next(reader)  # skip header row
-        for row in reader:
+        for index, row in enumerate(reader):
             row[0] = row[0].split('\n')[1].strip()
             addresses.append(row[0])
+            address_indices[row[0]] = index
             distances.append([float(dist) for dist in row[2:]])
 
-    return (addresses, distances)
+    return addresses, distances, address_indices
 
 # Our main function for delivering packages
-# Time Complexity: O(n^k) where n is the number of addresses and k is the number of packages
-# Due to use avoid loops in this function, we condense the time complexity to O(n^k) as it is the most expensive
-# Space Complexity: O(P+A^2) where P is the number of packages, A is the number of addresses
+# Time Complexity: O(N^2+A^2) where N is the number of packages and A is the number of Addresses
+# If N >> A, then the time complexity is O(N^2)
+# We could also move load_page_data() and load_distance_data() outside of this function to reduce the time complexity
+# Due to use avoid loops in this function, we condense the time complexity to O(n^2) as it is the most expensive
+# Space Complexity: O(A^2) A is the number of addresses.
 def deliver(end_time=None):
     # Load in the packages
     packages = load_page_data() # Time Complexity: O(n) where n is the number of packages
     # Load in the distances
-    addresses, distances = load_distance_data() # Time Complexity: O(n) where n is the number of addresses
+    addresses, distances, address_indices = load_distance_data() # Time Complexity: O(n) where n is the number of addresses
 
     HUB = addresses[0]  # the hub is the first address in the list
 
     truck1_package_logs = [
         [13, 14, 15, 16, 19, 20, 39, 21, 34, 7, 29, 27, 35, 37, 30, 8],
-        [24, 22, 18, 11, 23, 12]
+        [24, 22, 11, 23, 12]
     ]
 
     truck2_package_logs = [
-        [25, 26, 6, 28, 31, 32, 1, 4, 40, 17, 36],
+        [25, 26, 6, 28, 31, 32, 1, 4, 40, 17, 36, 18],
         [10, 5, 38, 3, 9, 2, 33]
     ]
 
@@ -74,7 +78,7 @@ def deliver(end_time=None):
     # Create our trucks and dispatch
     truck1 = Truck(1, current_location=HUB)
     truck2 = Truck(2, current_location=HUB, start_time='9:05')
-    dispatch = Dispatch(HUB, packages, addresses, distances)
+    dispatch = Dispatch(HUB, packages, addresses, address_indices, distances)
 
     # Load the trucks with the packages
     dispatch.loadTruckWithPackageList(truck1, truck1_package_logs[0]) # Time Complexity: O(n) where n is the number of packages
@@ -82,8 +86,8 @@ def deliver(end_time=None):
         dispatch.loadTruckWithPackageList(truck2, truck2_package_logs[0])   # Time Complexity: O(n) where n is the number of packages
 
     # Deliver the packages
-    success1 = dispatch.truckDeliverPackages(truck1, end_time)  # Time Complexity: O(n^k) where n is the number of addresses and k is the number of packages
-    success2 = dispatch.truckDeliverPackages(truck2, end_time)  # Time Complexity: O(n^k) where n is the number of addresses and k is the number of packages
+    success1 = dispatch.truckDeliverPackages(truck1, end_time)  # Time Complexity: O(n^2) where n is the number of addresses and k is the number of packages
+    success2 = dispatch.truckDeliverPackages(truck2, end_time)  # Time Complexity: O(n^2) where n is the number of addresses and k is the number of packages
 
     # This is our logic check if we have hit the end time request by the user and need to return the program early
     if not success1 or not success2:
@@ -95,8 +99,8 @@ def deliver(end_time=None):
     dispatch.loadTruckWithPackageList(truck2, truck2_package_logs[1]) # Time Complexity: O(n) where n is the number of packages
 
     # Deliver the last packages
-    dispatch.truckDeliverPackages(truck1, end_time) # Time Complexity: O(n^k) where n is the number of addresses and k is the number of packages
-    dispatch.truckDeliverPackages(truck2, end_time) # Time Complexity: O(n^k) where n is the number of addresses and k is the number of packages
+    dispatch.truckDeliverPackages(truck1, end_time) # Time Complexity: O(n^2) where n is the number of addresses and k is the number of packages
+    dispatch.truckDeliverPackages(truck2, end_time) # Time Complexity: O(n^2) where n is the number of addresses and k is the number of packages
 
     return (dispatch, truck1, truck2)
 
